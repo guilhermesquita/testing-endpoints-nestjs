@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { PlayersService } from './players.service';
 import { CreatePlayerDTO } from './dto/createPlayerDTO';
 import { Player } from './interface/player.interface';
@@ -16,7 +24,21 @@ export class PlayersController {
   }
 
   @Get()
-  async getAllPlayers(): Promise<Player[]> {
+  async getAllPlayers(
+    @Query('email') email: string,
+  ): Promise<Player | Player[]> {
+    if (email) {
+      return this.playersService.getPlayerByEmail(email);
+    }
+
     return await this.playersService.getAllPlayers();
+  }
+
+  @Delete('/:email')
+  async deletePlayer(@Param('email') email: string) {
+    await this.playersService.getPlayerByEmail(email);
+    return JSON.stringify({
+      message: 'Player has been deleted',
+    });
   }
 }

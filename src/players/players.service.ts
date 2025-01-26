@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { Player } from './interface/player.interface';
 import { CreatePlayerDTO } from './dto/createPlayerDTO';
@@ -10,8 +10,15 @@ export class PlayersService {
   private readonly logger = new Logger(PlayersService.name);
   // eslint-disable-next-line @typescript-eslint/require-await
   async createUpdatePlayer(createPlayerDTO: CreatePlayerDTO): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions
-    this.logger.log(`createPlayerDTO: ${createPlayerDTO}`);
+    const { email } = createPlayerDTO;
+
+    const playerFinded = this.players.find((player) => player.email === email);
+
+    if (playerFinded) {
+      return this.update(playerFinded, createPlayerDTO);
+    }
+
+    // this.logger.log(`createPlayerDTO: ${createPlayerDTO}`);
 
     this.create(createPlayerDTO);
   }
@@ -19,6 +26,25 @@ export class PlayersService {
   // eslint-disable-next-line @typescript-eslint/require-await
   async getAllPlayers(): Promise<Player[]> {
     return this.players;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async getPlayerByEmail(email: string): Promise<Player> {
+    const playerFinded = this.players.find((player) => player.email === email);
+    if (!playerFinded) {
+      throw new NotFoundException(`Player with email '${email}' not found`);
+    }
+    return playerFinded;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async deletePlayerByEmail(email: string): Promise<void> {
+    const index = this.players.findIndex((player) => player.email === email);
+    if (index === -1) {
+      throw new NotFoundException(`Player with email '${email}' not found`);
+    }
+
+    this.players.splice(index, 1);
   }
 
   private create(createPlayerDTO: CreatePlayerDTO): void {
@@ -35,5 +61,10 @@ export class PlayersService {
     };
 
     this.players.push(player);
+  }
+
+  private update(player: Player, updatePlayerDTO: CreatePlayerDTO): void {
+    const { name } = updatePlayerDTO;
+    player.name = name;
   }
 }
