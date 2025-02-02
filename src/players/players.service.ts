@@ -1,70 +1,60 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Player } from './interface/player.interface';
 import { CreatePlayerDTO } from './dto/createPlayerDTO';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class PlayersService {
-  private players: Player[] = [];
-  private readonly logger = new Logger(PlayersService.name);
-  // eslint-disable-next-line @typescript-eslint/require-await
+  constructor(
+    @InjectModel('Player') private readonly playerModel: Model<Player>,
+  ) {}
+
   async createUpdatePlayer(createPlayerDTO: CreatePlayerDTO): Promise<void> {
     const { email } = createPlayerDTO;
 
-    const playerFinded = this.players.find((player) => player.email === email);
+    const playerFinded = await this.playerModel.findOne({ email }).exec();
 
     if (playerFinded) {
-      return this.update(playerFinded, createPlayerDTO);
+      await this.update(createPlayerDTO);
+    } else {
+      await this.create(createPlayerDTO);
     }
-
-    // this.logger.log(`createPlayerDTO: ${createPlayerDTO}`);
-
-    this.create(createPlayerDTO);
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async getAllPlayers(): Promise<Player[]> {
-    return this.players;
+    return await this.playerModel.find().exec();
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async getPlayerByEmail(email: string): Promise<Player> {
-    const playerFinded = this.players.find((player) => player.email === email);
+    const playerFinded = await this.playerModel.findOne({ email }).exec();
     if (!playerFinded) {
       throw new NotFoundException(`Player with email '${email}' not found`);
     }
     return playerFinded;
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async deletePlayerByEmail(email: string): Promise<void> {
-    const index = this.players.findIndex((player) => player.email === email);
-    if (index === -1) {
+  async deletePlayerByEmail(email: string): Promise<any> {
+    const playerFinded = await this.playerModel.findOne({ email }).exec();
+    if (!playerFinded) {
       throw new NotFoundException(`Player with email '${email}' not found`);
     }
-
-    this.players.splice(index, 1);
+    await this.playerModel.deleteOne({ email }).exec();
   }
 
-  private create(createPlayerDTO: CreatePlayerDTO): void {
-    const { name, phoneNumber, email } = createPlayerDTO;
-    const player: Player = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      _id: uuidv4(),
-      phonenumber: phoneNumber,
-      email,
-      name,
-      ranking: 'N/A',
-      rankingPosition: 1,
-      urlImagePlayer: '',
-    };
-
-    this.players.push(player);
+  private async create(createPlayerDTO: CreatePlayerDTO): Promise<Player> {
+    const player = new this.playerModel(createPlayerDTO);
+    return await player.save();
   }
 
-  private update(player: Player, updatePlayerDTO: CreatePlayerDTO): void {
-    const { name } = updatePlayerDTO;
-    player.name = name;
+  private async update(updatePlayerDTO: CreatePlayerDTO) {
+    return await this.playerModel
+      .findOneAndUpdate(
+        { email: updatePlayerDTO.email },
+        {
+          $set: updatePlayerDTO,
+        },
+      )
+      .exec();
   }
 }
