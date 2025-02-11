@@ -5,7 +5,7 @@ import {
   PipeTransform,
 } from '@nestjs/common';
 
-export class PlayersParamsPipe implements PipeTransform {
+export class ValidationParamsPipe implements PipeTransform {
   transform(value: any, metadata: ArgumentMetadata) {
     if (!value && metadata.type === 'param') {
       throw new BadRequestException('Invalid');
