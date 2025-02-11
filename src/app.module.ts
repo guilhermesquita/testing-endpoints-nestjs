@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PlayersModule } from './players/players.module';
+import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { PlayersModule } from './players/players.module';
         autoIndex: true,
       },
     ),
+    CategoryModule,
   ],
 })
 export class AppModule {}
