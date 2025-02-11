@@ -57,6 +57,16 @@ export class CategoryService {
     return categoryFinded;
   }
 
+  async getCategoryByPlayer(player: string): Promise<Category | null> {
+    const categoryFinded = await this.categoryModel
+      .findOne({ players: player })
+      .exec();
+    if (!categoryFinded) {
+      throw new NotFoundException(`Player with id ${player} not found.`);
+    }
+    return categoryFinded;
+  }
+
   async assignCategoryPlayer(params: string[]) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const category = params['category'];
